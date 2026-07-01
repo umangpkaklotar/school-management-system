@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import json
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -11,11 +12,34 @@ app.secret_key = os.environ.get('SECRET_KEY', 'school-management-system-super-se
 CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": "*"}})
 
 DB_PATH = 'school.db'
+JSON_PATH = 'users.json'
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+def save_user_to_json(name, email, role, class_id=None):
+    users_list = []
+    if os.path.exists(JSON_PATH):
+        try:
+            with open(JSON_PATH, 'r') as f:
+                users_list = json.load(f)
+        except Exception:
+            users_list = []
+            
+    users_list.append({
+        'name': name,
+        'email': email,
+        'role': role,
+        'class_id': class_id
+    })
+    
+    try:
+        with open(JSON_PATH, 'w') as f:
+            json.dump(users_list, f, indent=4)
+    except Exception as e:
+        print(f"Error writing to JSON: {e}")
 
 def get_current_user():
     """
@@ -78,6 +102,8 @@ def register():
                 (name, email, hashed_password, role)
             )
         conn.commit()
+        # Save registered user to JSON file
+        save_user_to_json(name, email, role, class_id)
         return jsonify({'message': 'Registration successful!'}), 201
     except sqlite3.IntegrityError:
         return jsonify({'error': 'Email address already exists.'}), 409
