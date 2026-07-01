@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apex Academy - School Management System</title>
+    <!-- Google Fonts Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Background Glow Blobs -->
+    <div class="bg-glow blob-1"></div>
+    <div class="bg-glow blob-2"></div>
+
+    <!-- MAIN WRAPPER -->
+    <div id="app" class="app-container">
+
+        <!-- 1. AUTHENTICATION VIEW -->
+        <div id="auth-view" class="auth-card glass-panel fade-in">
+            <div class="auth-header">
+                <div class="logo">
+                    <svg viewBox="0 0 24 24" class="logo-icon">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                    <span>APEX ACADEMY</span>
+                </div>
+                <h2>School Portal Login</h2>
+                <p>Welcome back! Please enter your details to access your account.</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" class="auth-form">
+                <div class="input-group">
+                    <label for="login-email">Email Address</label>
+                    <input type="email" id="login-email" required placeholder="name@school.com">
+                </div>
+                <div class="input-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <span>Log In</span>
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="none" d="M0 0h24v24H0z"/><path d="M16.172 11l-5.364-5.364 1.414-1.414L20 12l-7.778 7.778-1.414-1.414L16.172 13H4v-2z" fill="currentColor"/></svg>
+                </button>
+                <div class="auth-switch">
+                    Don't have an account? <a href="#" id="show-signup">Register here</a>
+                </div>
+            </form>
+
+            <!-- Signup Form (Hidden initially) -->
+            <form id="signup-form" class="auth-form hidden">
+                <div class="input-group">
+                    <label for="signup-name">Full Name</label>
+                    <input type="text" id="signup-name" required placeholder="John Doe">
+                </div>
+                <div class="input-group">
+                    <label for="signup-email">Email Address</label>
+                    <input type="email" id="signup-email" required placeholder="name@school.com">
+                </div>
+                <div class="input-group">
+                    <label for="signup-password">Password</label>
+                    <input type="password" id="signup-password" required placeholder="••••••••">
+                </div>
+                <div class="input-group">
+                    <label for="signup-role">Portal Role</label>
+                    <select id="signup-role" required>
+                        <option value="" disabled selected>Select Role</option>
+                        <option value="student">Student</option>
+                        <option value="teacher">Teacher</option>
+                        <option value="management">Management Team</option>
+                    </select>
+                </div>
+                <!-- Dynamic Class Group for Students -->
+                <div class="input-group hidden" id="signup-class-group">
+                    <label for="signup-class">Class/Grade</label>
+                    <select id="signup-class">
+                        <option value="" disabled selected>Select Class</option>
+                        <!-- Populated dynamically via JS -->
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <span>Create Account</span>
+                </button>
+                <div class="auth-switch">
+                    Already have an account? <a href="#" id="show-login">Log in here</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- 2. DASHBOARD VIEW (Hidden initially) -->
+        <div id="dashboard-view" class="dashboard-layout hidden">
+            <!-- Sidebar Navigation -->
+            <aside class="sidebar glass-panel">
+                <div class="sidebar-brand">
+                    <svg viewBox="0 0 24 24" class="logo-icon">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                    <span>APEX ACADEMY</span>
+                </div>
+                
+                <div class="user-profile-summary">
+                    <div class="avatar" id="user-avatar-initials">AA</div>
+                    <div class="user-info">
+                        <div class="name" id="user-profile-name">User Name</div>
+                        <div class="role-badge" id="user-profile-role">Role</div>
+                    </div>
+                </div>
+
+                <nav class="sidebar-menu">
+                    <!-- Standard menus -->
+                    <button class="nav-item active" data-tab="overview">
+                        <svg viewBox="0 0 24 24"><path d="M3 13h1v7c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-7h1a1 1 0 0 0 .707-1.707l-9-9a.999.999 0 0 0-1.414 0l-9 9A1 1 0 0 0 3 13zm7 7v-5h4v5h-4zm2-15.586l6 6V20h-2v-5a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v5H6v-9.586l6-6z" fill="currentColor"/></svg>
+                        <span>Overview</span>
+                    </button>
+                    
+                    <!-- Management Menus -->
+                    <button class="nav-item mgt-only hidden" data-tab="students-teachers">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.25z" fill="currentColor"/></svg>
+                        <span>Users & Roster</span>
+                    </button>
+
+                    <button class="nav-item mgt-only hidden" data-tab="allocations">
+                        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" fill="currentColor"/></svg>
+                        <span>Allocations</span>
+                    </button>
+                    
+                    <!-- Teacher Menus -->
+                    <button class="nav-item teacher-only hidden" data-tab="teacher-grading">
+                        <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
+                        <span>Record Grades</span>
+                    </button>
+
+                    <!-- Student Menus -->
+                    <button class="nav-item student-only hidden" data-tab="student-grades">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" fill="currentColor"/></svg>
+                        <span>Report Card</span>
+                    </button>
+                    
+                    <!-- Shared View Classes -->
+                    <button class="nav-item" data-tab="view-curriculum">
+                        <svg viewBox="0 0 24 24"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM3.82 9L12 4.54 20.18 9 12 13.46 3.82 9zM19 13.09v4.74c-.58-.33-1.25-.56-2-.65V12.1l2 .99zm-4 .91v4.94c-.58-.33-1.25-.56-2-.65v-5.28l2 .99z" fill="currentColor"/></svg>
+                        <span>Curriculum</span>
+                    </button>
+                </nav>
+
+                <div class="sidebar-footer">
+                    <button id="logout-btn" class="btn btn-danger btn-block">
+                        <svg viewBox="0 0 24 24" width="16" height="16"><path d="M16 13v-2H7V9h9V7l5 4-5 4zM4 3h9v2H4v14h9v2H4c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2z" fill="currentColor"/></svg>
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="main-content">
+                <header class="top-header glass-panel">
+                    <div class="welcome-text">
+                        <h1 id="header-title">Overview Dashboard</h1>
+                        <p id="header-date">Wednesday, July 1, 2026</p>
+                    </div>
+                </header>
+
+                <div class="content-body">
+                    
+                    <!-- DYNAMIC SUB-SECTIONS -->
+
+                    <!-- 2A. TAB: OVERVIEW (All Roles) -->
+                    <section id="tab-overview" class="tab-pane active fade-in">
+                        <!-- Stats Grid -->
+                        <div class="stats-grid" id="stats-container">
+                            <!-- Populated dynamically based on role -->
+                        </div>
+
+                        <div class="row">
+                            <!-- Quick View Card -->
+                            <div class="col-8">
+                                <div class="glass-panel content-card">
+                                    <div class="card-header">
+                                        <h3>Welcome to Apex Academy</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <p>This portal connects students, educators, and administrators to facilitate streamlined educational management. Use the sidebar to explore records, allocate curriculum, and check grade transcripts.</p>
+                                        <div id="role-welcome-box" style="margin-top: 15px; padding: 15px; border-radius: 8px; background: rgba(255,255,255,0.03);">
+                                            <!-- Contextual info -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Class distribution / details -->
+                            <div class="col-4">
+                                <div class="glass-panel content-card">
+                                    <div class="card-header">
+                                        <h3>Calendar & Events</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <ul class="event-list">
+                                            <li>
+                                                <div class="date-badge">01 Jul</div>
+                                                <div class="event-info">
+                                                    <h4>Term Starts</h4>
+                                                    <p>Academic year 2026 starts today.</p>
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <div class="date-badge">15 Jul</div>
+                                                <div class="event-info">
+                                                    <h4>Mid-Term Review</h4>
+                                                    <p>Management-teacher status review.</p>
+                                                </div>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 2B. TAB: USERS & ROSTER (Management Only) -->
+                    <section id="tab-students-teachers" class="tab-pane fade-in hidden">
+                        <div class="row">
+                            <!-- Left: Create User Form -->
+                            <div class="col-4">
+                                <div class="glass-panel content-card">
+                                    <div class="card-header">
+                                        <h3>Register New User</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="mgt-create-user-form">
+                                            <div class="input-group">
+                                                <label for="mgt-user-name">Full Name</label>
+                                                <input type="text" id="mgt-user-name" required placeholder="e.g. Mrs. Sarah Smith">
+                                            </div>
+                                            <div class="input-group">
+                                                <label for="mgt-user-email">Email Address</label>
+                                                <input type="email" id="mgt-user-email" required placeholder="name@school.com">
+                                            </div>
+                                            <div class="input-group">
+                                                <label for="mgt-user-password">Temporary Password</label>
+                                                <input type="password" id="mgt-user-password" required placeholder="••••••••">
+                                            </div>
+                                            <div class="input-group">
+                                                <label for="mgt-user-role">Role</label>
+                                                <select id="mgt-user-role" required>
+                                                    <option value="" disabled selected>Select Role</option>
+                                                    <option value="student">Student</option>
+                                                    <option value="teacher">Teacher</option>
+                                                    <option value="management">Management</option>
+                                                </select>
+                                            </div>
+                                            <div class="input-group hidden" id="mgt-student-class-group">
+                                                <label for="mgt-student-class">Assign Class</label>
+                                                <select id="mgt-student-class">
+                                                    <option value="" disabled selected>Select Class</option>
+                                                </select>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary btn-block">Add User</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right: Roster List -->
+                            <div class="col-8">
+                                <div class="glass-panel content-card">
+                                    <div class="card-header tab-header">
+                                        <button class="sub-tab-btn active" data-roster="teachers">Teachers</button>
+                                        <button class="sub-tab-btn" data-roster="students">Students</button>
+                                    </div>
+                                    <div class="card-body table-container">
+                                        <!-- Teachers Table -->
+                                        <table id="teachers-table" class="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Name</th>
+                                                    <th>Email</th>
+                                                    <th>ID</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="teachers-list-body">
+                                                <!-- Dynamic load -->
+                                            </tbody>
+                                        </table>
+                                        
+                                        <!-- Students Table (Hidden initially) -->
+                                        <table id="students-table" class="data-table hidden">
+                                            <thead>
+                                                <tr>
+                                                    <th>Name</th>
+                                                    <th>Email</th>
+                                                    <th>Class</th>
+                                                    <th>ID</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="students-list-body">
+                                                <!-- Dynamic load -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 2C. TAB: ALLOCATIONS (Management Only) -->
+                    <section id="tab-allocations" class="tab-pane fade-in hidden">
+                        <div class="row">
+                            <!-- Left: Create Allocation Form -->
+                            <div class="col-4">
+                                <div class="glass-panel content-card">
+                                    <div class="card-header">
+                                        <h3>Assign Teacher to Subject</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="mgt-allocation-form">
+                                            <div class="input-group">
+                                                <label for="alloc-teacher">Select Teacher</label>
+                                                <select id="alloc-teacher" required>
+                                                    <option value="" disabled selected>Select Teacher</option>
+                                                </select>
+                                            </div>
+                                            <div class="input-group">
+                                                <label for="alloc-class">Select Class</label>
+                                                <select id="alloc-class" required>
+                                                    <option value="" disabled selected>Select Class</option>
+                                                </select>
+                                            </div>
+                                            <div class="input-group">
+                                                <label for="alloc-subject">Select Subject</label>
+                                                <select id="alloc-subject" required disabled>
+                                                    <option value="" disabled selected>Choose Class First</option>
+                                                </select>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary btn-block">Allocate Teacher</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right: Current Allocations List -->
+                            <div class="col-8">
+                                <div class="glass-panel content-card">
+                                    <div class="card-header">
+                                        <h3>Active Faculty Allocations</h3>
+                                    </div>
+                                    <div class="card-body table-container">
+                                        <table class="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Teacher</th>
+                                                    <th>Class</th>
+                                                    <th>Subject</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="allocations-list-body">
+                                                <!-- Dynamic load -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 2D. TAB: RECORD GRADES (Teacher Only) -->
+                    <section id="tab-teacher-grading" class="tab-pane fade-in hidden">
+                        <div class="row">
+                            <!-- Left: Select Allocation & Student -->
+                            <div class="col-4">
+                                <div class="glass-panel content-card">
+                                    <div class="card-header">
+                                        <h3>Enter Marks</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="teacher-grading-form">
+                                            <div class="input-group">
+                                                <label for="grade-allocation">Class & Subject</label>
+                                                <select id="grade-allocation" required>
+                                                    <option value="" disabled selected>Select Class / Subject</option>
+                                                </select>
+                                            </div>
+                                            <div class="input-group">
+                                                <label for="grade-student">Select Student</label>
+                                                <select id="grade-student" required disabled>
+                                                    <option value="" disabled selected>Select Class/Subject First</option>
+                                                </select>
+                                            </div>
+                                            <div class="input-group">
+                                                <label for="grade-marks">Marks Scored (0 - 100)</label>
+                                                <input type="number" id="grade-marks" required min="0" max="100" placeholder="e.g. 85">
+                                            </div>
+                                            <div class="input-group">
+                                                <label for="grade-remarks">Remarks</label>
+                                                <textarea id="grade-remarks" rows="3" placeholder="Excellent performance / needs improvement..."></textarea>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary btn-block">Save Grade</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right: Graded Sheet View -->
+                            <div class="col-8">
+                                <div class="glass-panel content-card">
+                                    <div class="card-header">
+                                        <h3>Student Performance Sheet</h3>
+                                    </div>
+                                    <div class="card-body table-container">
+                                        <table class="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Student</th>
+                                                    <th>Class</th>
+                                                    <th>Subject</th>
+                                                    <th>Marks</th>
+                                                    <th>Grade</th>
+                                                    <th>Remarks</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="teacher-grades-body">
+                                                <!-- Dynamic load -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 2E. TAB: REPORT CARD (Student Only) -->
+                    <section id="tab-student-grades" class="tab-pane fade-in hidden">
+                        <div class="glass-panel content-card">
+                            <div class="card-header">
+                                <h3>Official Report Card Transcript</h3>
+                            </div>
+                            <div class="card-body table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Subject</th>
+                                            <th>Marks Scored</th>
+                                            <th>Grade Letter</th>
+                                            <th>Instructor Comments</th>
+                                            <th>Instructor</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="student-grades-body">
+                                        <!-- Dynamic load -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 2F. TAB: CURRICULUM & SUBJECTS (All Roles) -->
+                    <section id="tab-view-curriculum" class="tab-pane fade-in hidden">
+                        <div class="glass-panel content-card">
+                            <div class="card-header">
+                                <h3>Curriculum Subject Outline (Grades 1 to 10)</h3>
+                                <p>Review academic syllabus subjects allocated for each respective class.</p>
+                            </div>
+                            <div class="card-body">
+                                <div class="curriculum-grid" id="curriculum-accordion-container">
+                                    <!-- Accordion of classes 1 to 10 dynamically generated -->
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <script src="js/app.js"></script>
+</body>
+</html>
