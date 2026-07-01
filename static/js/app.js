@@ -222,6 +222,9 @@ function handleLoginSuccess(user) {
     const initials = user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
     document.getElementById('user-avatar-initials').innerText = initials;
 
+    // Reset active tab view back to overview dashboard so previous login tab state is cleared
+    resetActiveTab();
+
     // Apply role view configurations
     configureRoleNav();
     loadOverview();
@@ -242,6 +245,34 @@ function handleLocalLogout() {
     // Reset forms
     document.getElementById('login-form').reset();
     document.getElementById('signup-form').reset();
+
+    // Reset active tab on logout
+    resetActiveTab();
+}
+
+function resetActiveTab() {
+    // Reset nav items active state
+    document.querySelectorAll('.nav-item').forEach(nav => {
+        if (nav.getAttribute('data-tab') === 'overview') {
+            nav.classList.add('active');
+        } else {
+            nav.classList.remove('active');
+        }
+    });
+
+    // Reset content tab panes
+    document.querySelectorAll('.tab-pane').forEach(pane => {
+        if (pane.id === 'tab-overview') {
+            pane.classList.remove('hidden');
+            pane.classList.add('active');
+        } else {
+            pane.classList.add('hidden');
+            pane.classList.remove('active');
+        }
+    });
+
+    // Reset header title
+    document.getElementById('header-title').innerText = 'Overview Dashboard';
 }
 
 function configureRoleNav() {
