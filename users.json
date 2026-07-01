@@ -1,0 +1,44 @@
+[
+    {
+        "name": "Teacher Mary",
+        "email": "mary@school.com",
+        "role": "teacher",
+        "class_id": null
+    },
+    {
+        "name": "Student Alice",
+        "email": "alice@school.com",
+        "role": "student",
+        "class_id": 9
+    },
+    {
+        "name": "Teacher John",
+        "email": "john@school.com",
+        "role": "teacher",
+        "class_id": null
+    },
+    {
+        "name": "Student Bob",
+        "email": "bob@school.com",
+        "role": "student",
+        "class_id": 10
+    },
+    {
+        "name": "puspa",
+        "email": "puspa@gmail.com",
+        "role": "teacher",
+        "class_id": null
+    },
+    {
+        "name": "vipul",
+        "email": "vipul@gmail.com",
+        "role": "teacher",
+        "class_id": null
+    },
+    {
+        "name": "raj",
+        "email": "raj@gmail.com",
+        "role": "student",
+        "class_id": "1"
+    }
+]

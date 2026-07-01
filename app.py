@@ -12,7 +12,6 @@ app.secret_key = os.environ.get('SECRET_KEY', 'school-management-system-super-se
 CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": "*"}})
 
 DB_PATH = 'school.db'
-JSON_PATH = 'users.json'
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -20,26 +19,36 @@ def get_db():
     return conn
 
 def save_user_to_json(name, email, role, class_id=None):
+    if role == 'student':
+        file_path = 'students.json'
+    elif role == 'teacher':
+        file_path = 'teachers.json'
+    else:
+        file_path = 'management.json'
+
     users_list = []
-    if os.path.exists(JSON_PATH):
+    if os.path.exists(file_path):
         try:
-            with open(JSON_PATH, 'r') as f:
+            with open(file_path, 'r') as f:
                 users_list = json.load(f)
         except Exception:
             users_list = []
             
-    users_list.append({
+    user_entry = {
         'name': name,
         'email': email,
-        'role': role,
-        'class_id': class_id
-    })
+        'role': role
+    }
+    if role == 'student':
+        user_entry['class_id'] = class_id
+
+    users_list.append(user_entry)
     
     try:
-        with open(JSON_PATH, 'w') as f:
+        with open(file_path, 'w') as f:
             json.dump(users_list, f, indent=4)
     except Exception as e:
-        print(f"Error writing to JSON: {e}")
+        print(f"Error writing to JSON ({file_path}): {e}")
 
 def get_current_user():
     """

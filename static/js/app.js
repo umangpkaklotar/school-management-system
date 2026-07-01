@@ -476,6 +476,16 @@ async function loadCurriculumTab() {
             let html = '';
             for (let i = 1; i <= 10; i++) {
                 const className = `Class ${i}`;
+                
+                // If the logged-in user is a student, restrict views to only their assigned class
+                if (currentUser && currentUser.role === 'student' && currentUser.class_id) {
+                    const studentClass = classesCache.find(c => c.id === parseInt(currentUser.class_id));
+                    const studentClassName = studentClass ? studentClass.name : '';
+                    if (className !== studentClassName) {
+                        continue;
+                    }
+                }
+                
                 const subjects = grouped[className];
                 
                 html += `
