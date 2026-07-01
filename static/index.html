@@ -127,6 +127,11 @@
                         <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" fill="currentColor"/></svg>
                         <span>Allocations</span>
                     </button>
+
+                    <button class="nav-item mgt-only hidden" data-tab="marks-ledger">
+                        <svg viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm2 4v2h10V7H7zm0 4v2h7v-2H7zm0 4v2h4v-2H7z" fill="currentColor"/></svg>
+                        <span>Marks Ledger</span>
+                    </button>
                     
                     <!-- Teacher Menus -->
                     <button class="nav-item teacher-only hidden" data-tab="teacher-grading">
@@ -367,7 +372,28 @@
                         </div>
                     </section>
 
-                    <!-- 2D. TAB: RECORD GRADES (Teacher Only) -->
+                    <!-- 2D. TAB: MARKS LEDGER (Management Only) -->
+                    <section id="tab-marks-ledger" class="tab-pane fade-in hidden">
+                        <div class="glass-panel content-card">
+                            <div class="card-header">
+                                <h3>Student Marks Ledger</h3>
+                                <p>Marks are grouped by class so each table shows students and their subject marks.</p>
+                            </div>
+                            <div class="card-body">
+                                <div class="input-group" style="max-width: 280px; margin-bottom: 16px;">
+                                    <label for="marks-ledger-class-filter">Select Class</label>
+                                    <select id="marks-ledger-class-filter">
+                                        <option value="all" selected>All Classes</option>
+                                    </select>
+                                </div>
+                                <div id="marks-ledger-container">
+                                    <p>Loading marks ledger...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 2E. TAB: RECORD GRADES (Teacher Only) -->
                     <section id="tab-teacher-grading" class="tab-pane fade-in hidden">
                         <div class="row">
                             <!-- Left: Select Allocation & Student -->
@@ -432,7 +458,7 @@
                         </div>
                     </section>
 
-                    <!-- 2E. TAB: REPORT CARD (Student Only) -->
+                    <!-- 2F. TAB: REPORT CARD (Student Only) -->
                     <section id="tab-student-grades" class="tab-pane fade-in hidden">
                         <div class="glass-panel content-card">
                             <div class="card-header">
@@ -457,7 +483,7 @@
                         </div>
                     </section>
 
-                    <!-- 2F. TAB: CURRICULUM & SUBJECTS (All Roles) -->
+                    <!-- 2G. TAB: CURRICULUM & SUBJECTS (All Roles) -->
                     <section id="tab-view-curriculum" class="tab-pane fade-in hidden">
                         <div class="glass-panel content-card">
                             <div class="card-header">

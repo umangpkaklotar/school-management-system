@@ -341,6 +341,7 @@ function setupNavigation() {
             if (tabName === 'overview') headerTitle.innerText = 'Overview Dashboard';
             else if (tabName === 'students-teachers') headerTitle.innerText = 'Roster Directory';
             else if (tabName === 'allocations') headerTitle.innerText = 'Faculty Allocations';
+            else if (tabName === 'marks-ledger') headerTitle.innerText = 'Marks Ledger';
             else if (tabName === 'teacher-grading') headerTitle.innerText = 'Grade Entry Sheet';
             else if (tabName === 'student-grades') headerTitle.innerText = 'Academic Transcript';
             else if (tabName === 'view-curriculum') headerTitle.innerText = 'School Curriculum';
@@ -349,6 +350,7 @@ function setupNavigation() {
             if (tabName === 'overview') loadOverview();
             else if (tabName === 'students-teachers') loadRosterTab();
             else if (tabName === 'allocations') loadAllocationsTab();
+            else if (tabName === 'marks-ledger') loadMarksLedgerTab();
             else if (tabName === 'teacher-grading') loadTeacherGradingTab();
             else if (tabName === 'student-grades') loadStudentGradesTab();
             else if (tabName === 'view-curriculum') loadCurriculumTab();
@@ -682,6 +684,116 @@ window.deleteAllocation = async (id) => {
         console.error(e);
     }
 };
+
+// --- MARKS LEDGER TAB (Management only) ---
+async function loadMarksLedgerTab() {
+    const container = document.getElementById('marks-ledger-container');
+    const classFilter = document.getElementById('marks-ledger-class-filter');
+    container.innerHTML = '<p>Loading marks ledger...</p>';
+
+    try {
+        const res = await apiFetch('/api/grades');
+        if (!res.ok) {
+            container.innerHTML = '<p>Unable to load marks ledger.</p>';
+            return;
+        }
+
+        const rows = await res.json();
+        const groupedByClass = new Map();
+
+        rows.forEach(row => {
+            if (!groupedByClass.has(row.class_name)) {
+                groupedByClass.set(row.class_name, []);
+            }
+            groupedByClass.get(row.class_name).push(row);
+        });
+
+        const classNames = Array.from(groupedByClass.keys()).sort((a, b) => a.localeCompare(b));
+        if (!classFilter.dataset.populated) {
+            classFilter.innerHTML = '<option value="all" selected>All Classes</option>' +
+                classNames.map(className => `<option value="${className}">${className}</option>`).join('');
+            classFilter.dataset.populated = 'true';
+        }
+
+        const selectedClass = classFilter.value || 'all';
+        const visibleClasses = selectedClass === 'all'
+            ? classNames
+            : classNames.filter(className => className === selectedClass);
+
+        if (visibleClasses.length === 0) {
+            container.innerHTML = '<p>No marks found for this class.</p>';
+            return;
+        }
+
+        const classCards = visibleClasses.map(className => {
+            const rowsForClass = groupedByClass.get(className) || [];
+            const subjectNames = [...new Set(rowsForClass.map(row => row.subject_name))];
+            const students = [...new Map(rowsForClass.map(row => [row.student_id, {
+                student_id: row.student_id,
+                student_name: row.student_name,
+                subjects: {}
+            }])).values()];
+
+            students.forEach(student => {
+                rowsForClass
+                    .filter(row => row.student_id === student.student_id)
+                    .forEach(row => {
+                        student.subjects[row.subject_name] = {
+                            marks: row.marks,
+                            grade: row.grade,
+                            remarks: row.remarks
+                        };
+                    });
+            });
+
+            const studentRows = students
+                .sort((a, b) => a.student_name.localeCompare(b.student_name))
+                .map(student => {
+                    const cells = [`<td><strong>${student.student_name}</strong></td>`];
+                    subjectNames.forEach(subject => {
+                        const entry = student.subjects[subject];
+                        if (entry && entry.marks !== null && entry.marks !== undefined) {
+                            cells.push(`<td><strong>${entry.marks}</strong><br><small>${entry.grade || '--'}</small></td>`);
+                        } else {
+                            cells.push('<td>--</td>');
+                        }
+                    });
+                    return `<tr>${cells.join('')}</tr>`;
+                })
+                .join('');
+
+            return `
+                <div class="glass-panel" style="margin-bottom: 16px; padding: 16px; border-radius: 12px;">
+                    <h4 style="margin-bottom: 12px;">${className}</h4>
+                    <div style="overflow-x:auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    ${subjectNames.map(subject => `<th>${subject}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>${studentRows || '<tr><td colspan="' + (subjectNames.length + 1) + '">No students found.</td></tr>'}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        container.innerHTML = classCards;
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = '<p>Unable to load marks ledger.</p>';
+    }
+}
+
+if (document.getElementById('marks-ledger-class-filter')) {
+    document.getElementById('marks-ledger-class-filter').addEventListener('change', () => {
+        if (typeof loadMarksLedgerTab === 'function') {
+            loadMarksLedgerTab();
+        }
+    });
+}
 
 // --- TEACHER GRADING TAB (Teacher only) ---
 async function loadTeacherGradingTab() {
