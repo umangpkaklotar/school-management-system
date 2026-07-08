@@ -82,6 +82,18 @@
                         <!-- Populated dynamically via JS -->
                     </select>
                 </div>
+                <div class="input-group">
+                    <label for="signup-mobile">Mobile Number</label>
+                    <input type="tel" id="signup-mobile" placeholder="e.g. 9876543210">
+                </div>
+                <div class="input-group">
+                    <label for="signup-age">Age</label>
+                    <input type="number" id="signup-age" min="1" max="120" placeholder="e.g. 15">
+                </div>
+                <div class="input-group">
+                    <label for="signup-profile-image">Profile Image</label>
+                    <input type="file" id="signup-profile-image" accept="image/*">
+                </div>
                 <button type="submit" class="btn btn-primary btn-block">
                     <span>Create Account</span>
                 </button>
@@ -131,6 +143,11 @@
                     <button class="nav-item mgt-only hidden" data-tab="marks-ledger">
                         <svg viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm2 4v2h10V7H7zm0 4v2h7v-2H7zm0 4v2h4v-2H7z" fill="currentColor"/></svg>
                         <span>Marks Ledger</span>
+                    </button>
+
+                    <button class="nav-item" data-tab="exams">
+                        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2zm0-4H7V7h10v2z" fill="currentColor"/></svg>
+                        <span>Exams</span>
                     </button>
                     
                     <!-- Teacher Menus -->
@@ -263,6 +280,18 @@
                                                     <option value="" disabled selected>Select Class</option>
                                                 </select>
                                             </div>
+                                            <div class="input-group">
+                                                <label for="mgt-user-mobile">Mobile Number</label>
+                                                <input type="tel" id="mgt-user-mobile" placeholder="e.g. 9876543210">
+                                            </div>
+                                            <div class="input-group">
+                                                <label for="mgt-user-age">Age</label>
+                                                <input type="number" id="mgt-user-age" min="1" max="120" placeholder="e.g. 15">
+                                            </div>
+                                            <div class="input-group">
+                                                <label for="mgt-user-profile-image">Profile Image</label>
+                                                <input type="file" id="mgt-user-profile-image" accept="image/*">
+                                            </div>
                                             <button type="submit" class="btn btn-primary btn-block">Add User</button>
                                         </form>
                                     </div>
@@ -393,8 +422,123 @@
                         </div>
                     </section>
 
-                    <!-- 2E. TAB: RECORD GRADES (Teacher Only) -->
+                    <!-- 2E. TAB: EXAMS (Management / Teacher / Student) -->
+                    <section id="tab-exams" class="tab-pane fade-in hidden">
+                        <div class="glass-panel content-card">
+                            <div class="card-header">
+                                <h3>Examination Management</h3>
+                                <p>Admin creates exams, students attend them, teachers record marks, and passed students can be promoted.</p>
+                            </div>
+                            <div class="card-body">
+                                <div id="exam-management-panel" class="hidden">
+                                    <div class="row">
+                                        <div class="col-4">
+                                            <form id="exam-create-form">
+                                                <div class="input-group">
+                                                    <label for="exam-title">Exam Title</label>
+                                                    <input type="text" id="exam-title" required placeholder="Mid Term Exam">
+                                                </div>
+                                                <div class="input-group">
+                                                    <label for="exam-class-select">Class</label>
+                                                    <select id="exam-class-select" required>
+                                                        <option value="" disabled selected>Select Class</option>
+                                                    </select>
+                                                </div>
+                                                <div class="input-group">
+                                                    <label for="exam-subject-select">Subject</label>
+                                                    <select id="exam-subject-select" required disabled>
+                                                        <option value="" disabled selected>Select Class First</option>
+                                                    </select>
+                                                </div>
+                                                <div class="input-group">
+                                                    <label for="exam-date">Exam Date</label>
+                                                    <input type="date" id="exam-date" required>
+                                                </div>
+                                                <div class="input-group">
+                                                    <label for="exam-duration">Duration (Minutes)</label>
+                                                    <input type="number" id="exam-duration" min="30" value="60">
+                                                </div>
+                                                <div class="input-group">
+                                                    <label for="exam-total-marks">Total Marks</label>
+                                                    <input type="number" id="exam-total-marks" min="1" value="100">
+                                                </div>
+                                                <button type="submit" class="btn btn-primary btn-block">Create Exam</button>
+                                            </form>
+                                        </div>
+                                        <div class="col-8">
+                                            <div class="card-header" style="padding-left:0; padding-right:0; margin-bottom:10px;">
+                                                <h3 style="margin:0;">Scheduled Exams</h3>
+                                            </div>
+                                            <div class="table-container">
+                                                <table class="data-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Title</th>
+                                                            <th>Class</th>
+                                                            <th>Subject</th>
+                                                            <th>Date</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="exam-management-body">
+                                                        <tr><td colspan="4">Loading exams...</td></tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="exam-teacher-panel" class="hidden">
+                                    <div class="input-group" style="max-width: 320px; margin-bottom: 16px;">
+                                        <label for="exam-teacher-select">Select Exam</label>
+                                        <select id="exam-teacher-select">
+                                            <option value="" disabled selected>Select Exam</option>
+                                        </select>
+                                    </div>
+                                    <div id="exam-teacher-results"></div>
+                                </div>
+
+                                <div id="exam-student-panel" class="hidden">
+                                    <div class="table-container">
+                                        <table class="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Exam</th>
+                                                    <th>Class</th>
+                                                    <th>Subject</th>
+                                                    <th>Date</th>
+                                                    <th>Status</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="exam-student-body">
+                                                <tr><td colspan="6">Loading exams...</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 2F. TAB: RECORD GRADES (Teacher Only) -->
                     <section id="tab-teacher-grading" class="tab-pane fade-in hidden">
+                        <div class="glass-panel content-card" style="margin-bottom: 20px;">
+                            <div class="card-header">
+                                <h3>Teacher Profile</h3>
+                            </div>
+                            <div class="card-body">
+                                <div id="teacher-profile-card" class="student-profile-card"></div>
+                                <form id="teacher-profile-upload-form" enctype="multipart/form-data" style="margin-top: 14px;">
+                                    <div class="input-group" style="margin-bottom: 10px;">
+                                        <label for="teacher-profile-upload">Upload Profile Image</label>
+                                        <input type="file" id="teacher-profile-upload" name="profile_image" accept="image/*">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Upload Image</button>
+                                </form>
+                            </div>
+                        </div>
+
                         <div class="row">
                             <!-- Left: Select Allocation & Student -->
                             <div class="col-4">
@@ -432,6 +576,14 @@
 
                             <!-- Right: Graded Sheet View -->
                             <div class="col-8">
+                                <div class="glass-panel content-card" style="margin-bottom: 20px;">
+                                    <div class="card-header">
+                                        <h3>Teaching History</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="teacher-history-list" class="student-history-list"></div>
+                                    </div>
+                                </div>
                                 <div class="glass-panel content-card">
                                     <div class="card-header">
                                         <h3>Student Performance Sheet</h3>
@@ -458,32 +610,61 @@
                         </div>
                     </section>
 
-                    <!-- 2F. TAB: REPORT CARD (Student Only) -->
+                    <!-- 2G. TAB: REPORT CARD (Student Only) -->
                     <section id="tab-student-grades" class="tab-pane fade-in hidden">
                         <div class="glass-panel content-card">
                             <div class="card-header">
-                                <h3>Official Report Card Transcript</h3>
+                                <h3>Student Profile & Academic History</h3>
                             </div>
-                            <div class="card-body table-container">
-                                <table class="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Subject</th>
-                                            <th>Marks Scored</th>
-                                            <th>Grade Letter</th>
-                                            <th>Instructor Comments</th>
-                                            <th>Instructor</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="student-grades-body">
-                                        <!-- Dynamic load -->
-                                    </tbody>
-                                </table>
+                            <div class="card-body">
+                                <div id="student-profile-card" class="student-profile-card"></div>
+                                <div class="row" style="margin-top: 20px;">
+                                    <div class="col-4">
+                                        <div class="glass-panel" style="padding:16px; background: rgba(255,255,255,0.03);">
+                                            <h4 style="margin-bottom: 10px;">Class History</h4>
+                                            <div id="student-class-history-list" class="student-history-list"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-8">
+                                        <div class="table-container">
+                                            <table class="data-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Previous Class</th>
+                                                        <th>Subject</th>
+                                                        <th>Marks</th>
+                                                        <th>Grade</th>
+                                                        <th>Teacher</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="student-history-body">
+                                                    <!-- Dynamic load -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="table-container" style="margin-top: 20px;">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Subject</th>
+                                                <th>Marks Scored</th>
+                                                <th>Grade Letter</th>
+                                                <th>Instructor Comments</th>
+                                                <th>Instructor</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="student-grades-body">
+                                            <!-- Dynamic load -->
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </section>
 
-                    <!-- 2G. TAB: CURRICULUM & SUBJECTS (All Roles) -->
+                    <!-- 2H. TAB: CURRICULUM & SUBJECTS (All Roles) -->
                     <section id="tab-view-curriculum" class="tab-pane fade-in hidden">
                         <div class="glass-panel content-card">
                             <div class="card-header">

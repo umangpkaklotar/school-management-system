@@ -6,6 +6,7 @@ const API_BASE = window.location.origin.startsWith('file') || window.location.or
 
 let currentUser = null;
 let classesCache = [];
+let teacherGradeSheet = [];
 
 // API Request Wrapper with Header Fallback for Decoupled Setup
 async function apiFetch(endpoint, options = {}) {
@@ -21,7 +22,9 @@ async function apiFetch(endpoint, options = {}) {
 
     options.credentials = 'include'; // for Flask sessions
 
-    if (options.body && typeof options.body === 'object') {
+    if (options.body instanceof FormData || options.body instanceof URLSearchParams || options.body instanceof Blob) {
+        // Let the browser set the correct multipart/form-data or other content type.
+    } else if (options.body && typeof options.body === 'object' && !(options.body instanceof File)) {
         options.headers['Content-Type'] = 'application/json';
         options.body = JSON.stringify(options.body);
     }
@@ -144,11 +147,24 @@ function setupAuthListeners() {
         const password = document.getElementById('signup-password').value;
         const role = document.getElementById('signup-role').value;
         const class_id = document.getElementById('signup-class').value || null;
+        const mobile_number = document.getElementById('signup-mobile').value;
+        const age = document.getElementById('signup-age').value;
+        const profileImageInput = document.getElementById('signup-profile-image');
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('email', email);
+        formData.append('password', password);
+        formData.append('role', role);
+        if (class_id) formData.append('class_id', class_id);
+        if (mobile_number) formData.append('mobile_number', mobile_number);
+        if (age) formData.append('age', age);
+        if (profileImageInput.files[0]) formData.append('profile_image', profileImageInput.files[0]);
 
         try {
             const res = await apiFetch('/api/auth/register', {
                 method: 'POST',
-                body: { name, email, password, role, class_id }
+                body: formData,
+                headers: {}
             });
             const data = await res.json();
 
@@ -342,6 +358,7 @@ function setupNavigation() {
             else if (tabName === 'students-teachers') headerTitle.innerText = 'Roster Directory';
             else if (tabName === 'allocations') headerTitle.innerText = 'Faculty Allocations';
             else if (tabName === 'marks-ledger') headerTitle.innerText = 'Marks Ledger';
+            else if (tabName === 'exams') headerTitle.innerText = 'Exams';
             else if (tabName === 'teacher-grading') headerTitle.innerText = 'Grade Entry Sheet';
             else if (tabName === 'student-grades') headerTitle.innerText = 'Academic Transcript';
             else if (tabName === 'view-curriculum') headerTitle.innerText = 'School Curriculum';
@@ -351,6 +368,7 @@ function setupNavigation() {
             else if (tabName === 'students-teachers') loadRosterTab();
             else if (tabName === 'allocations') loadAllocationsTab();
             else if (tabName === 'marks-ledger') loadMarksLedgerTab();
+            else if (tabName === 'exams') loadExamsTab();
             else if (tabName === 'teacher-grading') loadTeacherGradingTab();
             else if (tabName === 'student-grades') loadStudentGradesTab();
             else if (tabName === 'view-curriculum') loadCurriculumTab();
@@ -572,7 +590,13 @@ async function loadRosterTab() {
                 <tr>
                     <td><strong>${t.name}</strong></td>
                     <td>${t.email}</td>
-                    <td><code>TEA-${t.id}</code></td>
+                    <td>
+                        <code>TEA-${t.id}</code>
+                        <div style="margin-top: 6px; display:flex; gap:8px; flex-wrap:wrap;">
+                            <button class="action-link" onclick="editUser(${t.id}, 'teacher')">Edit</button>
+                            <button class="action-link-danger" onclick="deleteUser(${t.id})">Delete</button>
+                        </div>
+                    </td>
                 </tr>
             `).join('') || `<tr><td colspan="3">No teachers registered yet.</td></tr>`;
         }
@@ -586,7 +610,14 @@ async function loadRosterTab() {
                     <td><strong>${s.name}</strong></td>
                     <td>${s.email}</td>
                     <td><span class="subject-badge" style="color: white; border-color: rgba(255,255,255,0.15)">${s.class_name || 'N/A'}</span></td>
-                    <td><code>STU-${s.id}</code></td>
+                    <td>
+                        <code>STU-${s.id}</code>
+                        <div style="margin-top: 6px; display:flex; gap:8px; flex-wrap:wrap;">
+                            <button class="action-link" onclick="promoteStudent(${s.id})">Promote</button>
+                            <button class="action-link" onclick="editUser(${s.id}, 'student')">Edit</button>
+                            <button class="action-link-danger" onclick="deleteUser(${s.id})">Delete</button>
+                        </div>
+                    </td>
                 </tr>
             `).join('') || `<tr><td colspan="4">No students registered yet.</td></tr>`;
         }
@@ -594,6 +625,78 @@ async function loadRosterTab() {
         console.error(err);
     }
 }
+
+window.editUser = async (userId, role) => {
+    const name = prompt('Enter full name:');
+    if (name === null) return;
+    const email = prompt('Enter email:');
+    if (email === null) return;
+    const password = prompt('Enter new password (leave blank to keep current):') || '';
+    const classId = role === 'student' ? prompt('Enter class id (optional):') || '' : '';
+    const mobile = prompt('Enter mobile number (optional):') || '';
+    const age = prompt('Enter age (optional):') || '';
+    const profileImage = prompt('Enter profile image URL or leave blank:') || '';
+
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('email', email);
+    formData.append('role', role);
+    if (classId) formData.append('class_id', classId);
+    if (mobile) formData.append('mobile_number', mobile);
+    if (age) formData.append('age', age);
+    if (password) formData.append('password', password);
+    if (profileImage) formData.append('profile_image', profileImage);
+
+    try {
+        const res = await apiFetch(`/api/users/${userId}`, { method: 'PUT', body: formData, headers: {} });
+        const data = await res.json();
+        if (res.ok) {
+            showToast(data.message || 'User updated.');
+            await loadRosterTab();
+        } else {
+            showToast(data.error || 'Failed to update user.', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+    }
+};
+
+window.deleteUser = async (userId) => {
+    if (!confirm('Delete this user?')) return;
+    try {
+        const res = await apiFetch(`/api/users/${userId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok) {
+            showToast(data.message || 'User deleted.');
+            await loadRosterTab();
+            loadOverview();
+        } else {
+            showToast(data.error || 'Failed to delete user.', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+    }
+};
+
+window.promoteStudent = async (studentId) => {
+    if (!confirm('Promote this student to the next class?')) return;
+
+    try {
+        const res = await apiFetch(`/api/students/${studentId}/promote`, { method: 'POST' });
+        const data = await res.json();
+        if (res.ok) {
+            showToast(data.message || 'Student promoted.');
+            await loadRosterTab();
+            if (typeof loadMarksLedgerTab === 'function') {
+                await loadMarksLedgerTab();
+            }
+        } else {
+            showToast(data.error || 'Failed to promote student.', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+    }
+};
 
 // --- ALLOCATIONS TAB (Management only) ---
 async function loadAllocationsTab() {
@@ -795,6 +898,270 @@ if (document.getElementById('marks-ledger-class-filter')) {
     });
 }
 
+// --- EXAMS TAB (Management / Teacher / Student) ---
+async function loadExamsTab() {
+    const managementPanel = document.getElementById('exam-management-panel');
+    const teacherPanel = document.getElementById('exam-teacher-panel');
+    const studentPanel = document.getElementById('exam-student-panel');
+
+    managementPanel.classList.add('hidden');
+    teacherPanel.classList.add('hidden');
+    studentPanel.classList.add('hidden');
+
+    if (currentUser.role === 'management') {
+        managementPanel.classList.remove('hidden');
+        await loadManagementExams();
+        await populateExamClassSubjectSelectors();
+    } else if (currentUser.role === 'teacher') {
+        teacherPanel.classList.remove('hidden');
+        await loadTeacherExams();
+    } else if (currentUser.role === 'student') {
+        studentPanel.classList.remove('hidden');
+        await loadStudentExams();
+    }
+}
+
+async function loadManagementExams() {
+    const body = document.getElementById('exam-management-body');
+    body.innerHTML = '<tr><td colspan="4">Loading exams...</td></tr>';
+
+    try {
+        const res = await apiFetch('/api/exams');
+        if (res.ok) {
+            const exams = await res.json();
+            body.innerHTML = exams.map(exam => `
+                <tr>
+                    <td><strong>${exam.title}</strong></td>
+                    <td>${exam.class_name}</td>
+                    <td>${exam.subject_name}</td>
+                    <td>${exam.exam_date}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="4">No exams created yet.</td></tr>';
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function populateExamClassSubjectSelectors() {
+    const classSelect = document.getElementById('exam-class-select');
+    const subjectSelect = document.getElementById('exam-subject-select');
+
+    if (!classSelect || !subjectSelect) return;
+
+    classSelect.innerHTML = '<option value="" disabled selected>Select Class</option>' +
+        classesCache.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    subjectSelect.innerHTML = '<option value="" disabled selected>Select Class First</option>';
+    subjectSelect.disabled = true;
+
+    if (!classSelect.dataset.listenerSet) {
+        classSelect.addEventListener('change', async () => {
+            const classId = classSelect.value;
+            subjectSelect.innerHTML = '<option value="" disabled selected>Loading subjects...</option>';
+            subjectSelect.disabled = true;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/subjects?class_id=${classId}`);
+                if (res.ok) {
+                    const subjects = await res.json();
+                    subjectSelect.innerHTML = '<option value="" disabled selected>Select Subject</option>' +
+                        subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+                    subjectSelect.disabled = false;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        });
+        classSelect.dataset.listenerSet = 'true';
+    }
+}
+
+async function loadTeacherExams() {
+    const select = document.getElementById('exam-teacher-select');
+    const resultsBox = document.getElementById('exam-teacher-results');
+    select.innerHTML = '<option value="" disabled selected>Select Exam</option>';
+    resultsBox.innerHTML = '<p>Select an exam to view results.</p>';
+
+    try {
+        const res = await apiFetch('/api/exams');
+        if (res.ok) {
+            const exams = await res.json();
+            select.innerHTML += exams.map(exam => `<option value="${exam.id}">${exam.title} - ${exam.class_name} - ${exam.subject_name}</option>`).join('');
+
+            if (!select.dataset.listenerSet) {
+                select.addEventListener('change', async () => {
+                    const examId = select.value;
+                    if (!examId) {
+                        resultsBox.innerHTML = '<p>Select an exam to view results.</p>';
+                        return;
+                    }
+                    try {
+                        const res2 = await apiFetch(`/api/exams/${examId}/results`);
+                        if (res2.ok) {
+                            const data = await res2.json();
+                            let html = '<div class="table-container"><table class="data-table"><thead><tr><th>Student</th><th>Attended</th><th>Marks</th><th>Grade</th><th>Pass</th><th>Action</th></tr></thead><tbody>';
+                            for (const row of data.results) {
+                                html += `
+                                    <tr>
+                                        <td>${row.student_name}</td>
+                                        <td>${row.attended ? 'Yes' : 'No'}</td>
+                                        <td>${row.marks !== null && row.marks !== undefined ? row.marks : '--'}</td>
+                                        <td>${row.grade || '--'}</td>
+                                        <td>${row.passed ? 'Passed' : 'Failed'}</td>
+                                        <td>
+                                            <input type="number" id="marks-${row.student_id}" min="0" max="100" style="width:70px;" placeholder="Marks">
+                                            <button class="btn btn-primary" onclick="saveExamResult(${examId}, ${row.student_id})">Save</button>
+                                        </td>
+                                    </tr>`;
+                            }
+                            html += '</tbody></table></div>';
+                            resultsBox.innerHTML = html;
+                        }
+                    } catch (err) {
+                        console.error(err);
+                    }
+                });
+                select.dataset.listenerSet = 'true';
+            }
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function loadStudentExams() {
+    const body = document.getElementById('exam-student-body');
+    body.innerHTML = '<tr><td colspan="6">Loading exams...</td></tr>';
+
+    try {
+        const res = await apiFetch('/api/exams');
+        if (res.ok) {
+            const exams = await res.json();
+            body.innerHTML = exams.map(exam => `
+                <tr>
+                    <td><strong>${exam.title}</strong></td>
+                    <td>${exam.class_name}</td>
+                    <td>${exam.subject_name}</td>
+                    <td>${exam.exam_date}</td>
+                    <td>${exam.attended ? 'Attended' : 'Pending'}</td>
+                    <td>
+                        ${exam.attended ? '<span class="subject-badge">Marked</span>' : `<button class="btn btn-primary" onclick="markExamAttendance(${exam.id})">Attend</button>`}
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="6">No exams available.</td></tr>';
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+window.markExamAttendance = async (examId) => {
+    try {
+        const res = await apiFetch(`/api/exams/${examId}/attend`, { method: 'POST' });
+        if (res.ok) {
+            showToast('Exam attendance marked successfully.');
+            await loadStudentExams();
+        } else {
+            const err = await res.json();
+            showToast(err.error || 'Failed to mark attendance.', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+    }
+};
+
+window.saveExamResult = async (examId, studentId) => {
+    const marksInput = document.getElementById(`marks-${studentId}`);
+    const marks = marksInput ? parseInt(marksInput.value) : null;
+    if (isNaN(marks)) {
+        showToast('Please enter marks.', 'error');
+        return;
+    }
+
+    try {
+        const res = await apiFetch(`/api/exams/${examId}/results`, {
+            method: 'POST',
+            body: { student_id: studentId, marks, remarks: '' }
+        });
+        if (res.ok) {
+            showToast('Exam result saved.');
+            await loadTeacherExams();
+        } else {
+            const err = await res.json();
+            showToast(err.error || 'Failed to save result.', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+    }
+};
+
+window.prefillTeacherGradeForm = (studentId, subjectId) => {
+    const allocSel = document.getElementById('grade-allocation');
+    const studentSel = document.getElementById('grade-student');
+
+    if (!allocSel || !studentSel) return;
+
+    const entry = teacherGradeSheet.find(row => row.student_id === studentId && row.subject_id === subjectId);
+    if (!entry) return;
+
+    allocSel.value = subjectId;
+    allocSel.dispatchEvent(new Event('change'));
+
+    setTimeout(() => {
+        studentSel.value = studentId;
+        studentSel.dispatchEvent(new Event('change'));
+    }, 0);
+};
+
+async function loadTeacherProfileAndHistory() {
+    const profileCard = document.getElementById('teacher-profile-card');
+    const historyList = document.getElementById('teacher-history-list');
+    if (!profileCard || !historyList) return;
+
+    profileCard.innerHTML = '<p>Loading profile...</p>';
+    historyList.innerHTML = '<p>Loading teaching history...</p>';
+
+    try {
+        const [profileRes, historyRes] = await Promise.all([
+            apiFetch('/api/profile'),
+            apiFetch('/api/teacher/history')
+        ]);
+
+        if (profileRes.ok) {
+            const payload = await profileRes.json();
+            const user = payload.user || {};
+            const initials = (user.name || 'Teacher').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+            const imageHtml = user.profile_image ? `<img class="avatar-image" src="${user.profile_image}" alt="Profile">` : initials;
+            profileCard.innerHTML = `
+                <div class="student-profile-avatar">${imageHtml}</div>
+                <div class="student-profile-details">
+                    <h4>${user.name || 'Teacher'}</h4>
+                    <div class="student-profile-meta">
+                        <span>Email: ${user.email || 'N/A'}</span>
+                        <span>Mobile: ${user.mobile_number || 'N/A'}</span>
+                        <span>Age: ${user.age || 'N/A'}</span>
+                        <span>Role: ${user.role || 'Teacher'}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (historyRes.ok) {
+            const payload = await historyRes.json();
+            historyList.innerHTML = (payload.history || []).map(item => `
+                <div class="student-history-pill">
+                    ${item.class_name || 'N/A'} • ${item.subject_name || 'N/A'}
+                    <div style="margin-top: 4px; color: var(--text-muted); font-size: 11px;">
+                        Students: ${item.student_count || 0} • Graded: ${item.graded_count || 0}
+                    </div>
+                </div>
+            `).join('') || '<div class="student-history-pill">No teaching history yet.</div>';
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
 // --- TEACHER GRADING TAB (Teacher only) ---
 async function loadTeacherGradingTab() {
     const listBody = document.getElementById('teacher-grades-body');
@@ -802,6 +1169,8 @@ async function loadTeacherGradingTab() {
 
     const allocSel = document.getElementById('grade-allocation');
     const studentSel = document.getElementById('grade-student');
+
+    await loadTeacherProfileAndHistory();
 
     allocSel.innerHTML = `<option value="" disabled selected>Select Class / Subject</option>`;
     studentSel.innerHTML = `<option value="" disabled selected>Select Class/Subject First</option>`;
@@ -812,6 +1181,7 @@ async function loadTeacherGradingTab() {
         const res = await apiFetch('/api/grades');
         if (res.ok) {
             const sheet = await res.json();
+            teacherGradeSheet = sheet;
             
             // Render the grades table
             listBody.innerHTML = sheet.map(row => `
@@ -821,7 +1191,10 @@ async function loadTeacherGradingTab() {
                     <td><strong>${row.subject_name}</strong></td>
                     <td><span style="font-weight:600">${row.marks !== null ? row.marks : '--'}</span></td>
                     <td><span class="subject-badge" style="color: ${row.grade === 'F' ? 'var(--danger)' : 'var(--secondary)'}; border-color: currentColor">${row.grade || '--'}</span></td>
-                    <td><span style="font-style:italic; font-size:12px">${row.remarks || 'No remarks'}</span></td>
+                    <td>
+                        <span style="font-style:italic; font-size:12px">${row.remarks || 'No remarks'}</span>
+                        <div style="margin-top: 6px;"><button type="button" class="action-link" onclick="prefillTeacherGradeForm(${row.student_id}, ${row.subject_id})">Edit</button></div>
+                    </td>
                 </tr>
             `).join('') || `<tr><td colspan="6">You have no allocations or students assigned.</td></tr>`;
 
@@ -860,8 +1233,28 @@ async function loadTeacherGradingTab() {
                     studentSel.innerHTML = `<option value="" disabled selected>Select Student</option>` +
                         filteredStudents.map(s => `<option value="${s.student_id}">${s.student_name}</option>`).join('');
                     studentSel.removeAttribute('disabled');
+                    document.getElementById('grade-marks').value = '';
+                    document.getElementById('grade-remarks').value = '';
                 });
                 allocSel.dataset.listenerSet = "true";
+            }
+
+            if (!studentSel.dataset.listenerSet) {
+                studentSel.addEventListener('change', () => {
+                    const subjectId = parseInt(allocSel.value);
+                    const studentId = parseInt(studentSel.value);
+                    if (!subjectId || isNaN(studentId)) return;
+
+                    const entry = teacherGradeSheet.find(row => row.subject_id === subjectId && row.student_id === studentId);
+                    if (entry) {
+                        document.getElementById('grade-marks').value = entry.marks !== null && entry.marks !== undefined ? entry.marks : '';
+                        document.getElementById('grade-remarks').value = entry.remarks || '';
+                    } else {
+                        document.getElementById('grade-marks').value = '';
+                        document.getElementById('grade-remarks').value = '';
+                    }
+                });
+                studentSel.dataset.listenerSet = "true";
             }
         }
     } catch (err) {
@@ -872,13 +1265,23 @@ async function loadTeacherGradingTab() {
 // --- STUDENT GRADES TAB (Student only) ---
 async function loadStudentGradesTab() {
     const body = document.getElementById('student-grades-body');
+    const profileCard = document.getElementById('student-profile-card');
+    const historyBody = document.getElementById('student-history-body');
+    const classHistoryList = document.getElementById('student-class-history-list');
     body.innerHTML = `<tr><td colspan="5">Loading report card...</td></tr>`;
+    historyBody.innerHTML = `<tr><td colspan="5">Loading history...</td></tr>`;
+    profileCard.innerHTML = `<p>Loading profile...</p>`;
+    classHistoryList.innerHTML = `<p>Loading class history...</p>`;
 
     try {
-        const res = await apiFetch('/api/grades');
-        if (res.ok) {
-            const grades = await res.json();
-            
+        const [gradesRes, profileRes, historyRes] = await Promise.all([
+            apiFetch('/api/grades'),
+            apiFetch('/api/profile'),
+            apiFetch('/api/student/history')
+        ]);
+
+        if (gradesRes.ok) {
+            const grades = await gradesRes.json();
             body.innerHTML = grades.map(g => `
                 <tr>
                     <td><strong>${g.subject_name}</strong></td>
@@ -888,6 +1291,42 @@ async function loadStudentGradesTab() {
                     <td><strong>${g.teacher_name || 'Not Assigned'}</strong></td>
                 </tr>
             `).join('') || `<tr><td colspan="5">No courses found.</td></tr>`;
+        }
+
+        if (profileRes.ok) {
+            const payload = await profileRes.json();
+            const user = payload.user || {};
+            const initials = (user.name || 'Student').split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
+            const imageHtml = user.profile_image ? `<img class="avatar-image" src="${user.profile_image}" alt="Profile">` : initials;
+            profileCard.innerHTML = `
+                <div class="student-profile-avatar">${imageHtml}</div>
+                <div class="student-profile-details">
+                    <h4>${user.name || 'Student'}</h4>
+                    <div class="student-profile-meta">
+                        <span>Email: ${user.email || 'N/A'}</span>
+                        <span>Mobile: ${user.mobile_number || 'N/A'}</span>
+                        <span>Age: ${user.age || 'N/A'}</span>
+                        <span>Class: ${user.class_name || user.class_id || 'N/A'}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (historyRes.ok) {
+            const payload = await historyRes.json();
+            historyBody.innerHTML = (payload.history || []).map(item => `
+                <tr>
+                    <td><strong>${item.class_name || 'N/A'}</strong></td>
+                    <td>${item.subject_name || 'N/A'}</td>
+                    <td>${item.marks !== null ? item.marks : '--'}</td>
+                    <td>${item.grade || '--'}</td>
+                    <td>${item.teacher_name || 'Not Assigned'}</td>
+                </tr>
+            `).join('') || `<tr><td colspan="5">No previous class history yet.</td></tr>`;
+
+            classHistoryList.innerHTML = (payload.class_history || []).map(item => `
+                <div class="student-history-pill">${item.class_name || 'N/A'} • ${item.promoted_at || 'N/A'}</div>
+            `).join('') || `<div class="student-history-pill">No class history yet.</div>`;
         }
     } catch (err) {
         console.error(err);
@@ -905,11 +1344,24 @@ function setupFormListeners() {
         const password = document.getElementById('mgt-user-password').value;
         const role = document.getElementById('mgt-user-role').value;
         const class_id = document.getElementById('mgt-student-class').value || null;
+        const mobile_number = document.getElementById('mgt-user-mobile').value;
+        const age = document.getElementById('mgt-user-age').value;
+        const profileImageInput = document.getElementById('mgt-user-profile-image');
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('email', email);
+        formData.append('password', password);
+        formData.append('role', role);
+        if (class_id) formData.append('class_id', class_id);
+        if (mobile_number) formData.append('mobile_number', mobile_number);
+        if (age) formData.append('age', age);
+        if (profileImageInput.files[0]) formData.append('profile_image', profileImageInput.files[0]);
 
         try {
-            const res = await apiFetch('/api/auth/register', {
+            const res = await apiFetch('/api/users', {
                 method: 'POST',
-                body: { name, email, password, role, class_id }
+                body: formData,
+                headers: {}
             });
             const data = await res.json();
 
@@ -957,6 +1409,70 @@ function setupFormListeners() {
         }
     });
 
+    // Management Create Exam Form
+    const examCreateForm = document.getElementById('exam-create-form');
+    if (examCreateForm) {
+        examCreateForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('exam-title').value;
+            const class_id = document.getElementById('exam-class-select').value;
+            const subject_id = document.getElementById('exam-subject-select').value;
+            const exam_date = document.getElementById('exam-date').value;
+            const duration_minutes = document.getElementById('exam-duration').value;
+            const total_marks = document.getElementById('exam-total-marks').value;
+
+            try {
+                const res = await apiFetch('/api/exams', {
+                    method: 'POST',
+                    body: { title, class_id: parseInt(class_id), subject_id: parseInt(subject_id), exam_date, duration_minutes: parseInt(duration_minutes), total_marks: parseInt(total_marks) }
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('Exam created successfully.');
+                    examCreateForm.reset();
+                    await loadManagementExams();
+                } else {
+                    showToast(data.error || 'Failed to create exam.', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        });
+    }
+
+    const teacherProfileUploadForm = document.getElementById('teacher-profile-upload-form');
+    if (teacherProfileUploadForm) {
+        teacherProfileUploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('teacher-profile-upload');
+            if (!input.files[0]) {
+                showToast('Please choose an image first.', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('profile_image', input.files[0]);
+
+            try {
+                const res = await apiFetch('/api/profile', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {}
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast(data.message || 'Profile image uploaded.');
+                    await loadTeacherProfileAndHistory();
+                    input.value = '';
+                } else {
+                    showToast(data.error || 'Failed to upload image.', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        });
+    }
+
     // Teacher Save Grade Form
     const teacherGradeForm = document.getElementById('teacher-grading-form');
     teacherGradeForm.addEventListener('submit', async (e) => {
@@ -979,6 +1495,9 @@ function setupFormListeners() {
                 document.getElementById('grade-student').innerHTML = `<option value="" disabled selected>Select Class/Subject First</option>`;
                 document.getElementById('grade-student').setAttribute('disabled', 'disabled');
                 await loadTeacherGradingTab();
+                if (typeof loadMarksLedgerTab === 'function') {
+                    await loadMarksLedgerTab();
+                }
             } else {
                 showToast(data.error || 'Failed to record grade.', 'error');
             }

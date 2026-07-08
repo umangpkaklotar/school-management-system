@@ -50,3 +50,43 @@ CREATE TABLE IF NOT EXISTS grades (
     FOREIGN KEY(subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
     UNIQUE(student_id, subject_id)
 );
+
+-- Table: exams (admin-created exams for a class and subject)
+CREATE TABLE IF NOT EXISTS exams (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    class_id INTEGER NOT NULL,
+    subject_id INTEGER NOT NULL,
+    exam_date TEXT NOT NULL,
+    duration_minutes INTEGER NOT NULL DEFAULT 60,
+    total_marks INTEGER NOT NULL DEFAULT 100,
+    created_by INTEGER NOT NULL,
+    FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
+    FOREIGN KEY(subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
+    FOREIGN KEY(created_by) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Table: exam_attendance (student attendance for an exam)
+CREATE TABLE IF NOT EXISTS exam_attendance (
+    exam_id INTEGER NOT NULL,
+    student_id INTEGER NOT NULL,
+    attended INTEGER NOT NULL DEFAULT 0,
+    attended_at TEXT,
+    PRIMARY KEY(exam_id, student_id),
+    FOREIGN KEY(exam_id) REFERENCES exams(id) ON DELETE CASCADE,
+    FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Table: exam_results (teacher-entered marks and pass status)
+CREATE TABLE IF NOT EXISTS exam_results (
+    exam_id INTEGER NOT NULL,
+    student_id INTEGER NOT NULL,
+    marks INTEGER NOT NULL,
+    grade TEXT,
+    remarks TEXT,
+    passed INTEGER NOT NULL DEFAULT 0,
+    promoted INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY(exam_id, student_id),
+    FOREIGN KEY(exam_id) REFERENCES exams(id) ON DELETE CASCADE,
+    FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE
+);

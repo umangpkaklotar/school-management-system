@@ -1,0 +1,26 @@
+[
+    {
+        "name": "meet",
+        "email": "meet@gmail.com",
+        "role": "student",
+        "class_id": "2"
+    },
+    {
+        "name": "vijay",
+        "email": "vijay@gmail.com",
+        "role": "student",
+        "class_id": "2"
+    },
+    {
+        "name": "jay",
+        "email": "jay@gmail.com",
+        "role": "student",
+        "class_id": "2"
+    },
+    {
+        "name": "mitul",
+        "email": "mitul@gmail.com",
+        "role": "student",
+        "class_id": "2"
+    }
+]
